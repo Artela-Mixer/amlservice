@@ -8,7 +8,7 @@ export class ResponseService {
     return { code: 0, msg, data };
   }
 
-  error(msg: string, code: number = -1): IHttpResponse<null> {
+  error(code: number = -1, msg: string): IHttpResponse<null> {
     return { code, msg, data: null };
   }
 }

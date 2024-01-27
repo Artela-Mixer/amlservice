@@ -9,6 +9,7 @@ import { Connection } from 'typeorm';
 import { MerkleTree, PartialMerkleTree } from 'fixed-merkle-tree'
 import { Logger } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common';
+import { IHttpResponse } from './common/http-response.interface';
 
 
 
@@ -49,12 +50,12 @@ export class WhitelistService {
     return this.responseService.success(data);
   }
 
-  async importWhitelist(addrs: string[]): Promise<void> {
-    await this.connection.transaction(async manager => {
+  async importWhitelist(addrs: string[]): Promise<any> {
+    return await this.connection.transaction(async manager => {
       // 排序 addr 列表
       const sortedAddrs = addrs.sort((a, b) => a.localeCompare(b));
       // 使用fixed-merkle-tree库生成Merkle Tree root
-      const merkleTree = new MerkleTree(this.layer, sortedAddrs); // 32是Layer的大小
+      const merkleTree = new MerkleTree(this.layer, sortedAddrs);
       const root = merkleTree.root as string;
       await manager.update(WhitelistEntity, {}, { status: 0 });
 
@@ -65,7 +66,7 @@ export class WhitelistService {
         if (total > 0) {
           await manager.update(WhitelistEntity, {root:root}, { status: 1 });
           this.logger.log(`root: ${root} already exist, update status to 1`);
-          return;
+          return this.responseService.success({root:root});
         }
 
       // 请确保你的orm实例可以直接插入addr数组，具体实现可能依赖于你使用的ORM。
@@ -78,6 +79,7 @@ export class WhitelistService {
       });
 
       await manager.save(whitelist);
+      return this.responseService.success({root:root});
     });
   }
 
@@ -88,13 +90,13 @@ export class WhitelistService {
     });
 
     if (!records.length) {
-      throw new NotFoundException(`Records with root: ${root} not found.`);
+      return this.responseService.error(-31, `Records with root: ${root} not found.`);
     }
 
     // 检查是否存在特定的addr
     const addrExists = records.some(record => record.addr === addrToCheck);
     if (!addrExists) {
-      throw new NotFoundException(`Address ${addrToCheck} not found in records.`);
+      return this.responseService.error(-32, `Records with addr: ${addrToCheck} not found.`);
     }
 
     // 提取所有的addr
