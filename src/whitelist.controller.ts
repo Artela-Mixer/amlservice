@@ -36,7 +36,7 @@ export class WhitelistController {
             if (dto.addr.length > 100) {
                 return this.responseService.error(-20, 'Failed, addr list is too long');
             }
-            return this.whitelistService.importWhitelist(dto.addr);
+            return this.whitelistService.importWhitelistV2(dto.addr);
         } catch (error) {
             return this.responseService.error(-20, 'Failed, ' + error.message);
         }
@@ -46,7 +46,7 @@ export class WhitelistController {
     @ApiOperation({summary: 'query whitelist'})
     async query(@Body() dto: WhitelistQueryDto) {
         try {
-            return this.whitelistService.qeuryWhitelist(dto.root, dto.addr);
+            return this.whitelistService.qeuryWhitelistV2(dto.root, dto.addr);
         } catch (error) {
             return this.responseService.error(-30, 'Failed, ' + error.message);
         }
